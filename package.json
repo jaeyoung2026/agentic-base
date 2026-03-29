@@ -1,0 +1,68 @@
+{
+  "name": "agentic-base",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "dep:check": "dependency-cruiser --config .dependency-cruiser.cjs src",
+    "dup:check": "jscpd --config .jscpd.json src/",
+    "knip": "knip --reporter compact",
+    "guard:escapes": "node scripts/quality/check-escapes.mjs",
+    "guard:test-ratio": "node scripts/quality/check-test-ratio.mjs",
+    "quality:guards": "npm run guard:escapes && npm run guard:test-ratio",
+    "quality:commit": "npm run quality:guards && lint-staged",
+    "quality:prepush": "npm run quality:check",
+    "quality:check": "npm run quality:guards && npm run format:check && npm run lint && npm run typecheck && npm run dep:check && npm run dup:check && npm run knip && npm run test:coverage && npm run specdown && npm run build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "specdown": "node scripts/specdown-run.mjs run"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^3.0.0",
+    "@supabase/ssr": "^0.5.0",
+    "@supabase/supabase-js": "^2.48.0",
+    "ai": "^6.0.0",
+    "next": "^16.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^3.24.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "dependency-cruiser": "^16.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.0.0",
+    "eslint-plugin-sonarjs": "^3.0.0",
+    "husky": "^9.0.0",
+    "jscpd": "^4.0.0",
+    "knip": "^5.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "prettier-plugin-tailwindcss": "^0.6.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
+  }
+}

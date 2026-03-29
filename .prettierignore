@@ -1,0 +1,5 @@
+specs/report/
+specs/report.json
+.next/
+node_modules/
+coverage/

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/app/**/*.{ts,tsx}",
+    "src/lib/**/*.ts",
+    "src/domain/index.ts",
+    "src/agent/**/*.ts",
+    "src/observability/**/*.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["specs/**", "scripts/**"],
+  "ignoreDependencies": [
+    "prettier-plugin-tailwindcss",
+    "@eslint/eslintrc",
+    "eslint-plugin-sonarjs",
+    "husky",
+    "tailwindcss",
+    "typescript-eslint",
+    "zustand"
+  ]
+}
