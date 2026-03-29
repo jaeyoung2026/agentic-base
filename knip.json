@@ -5,6 +5,7 @@
     "src/lib/**/*.ts",
     "src/domain/index.ts",
     "src/agent/**/*.ts",
+    "src/execution/**/*.ts",
     "src/observability/**/*.ts"
   ],
   "project": ["src/**/*.{ts,tsx}"],

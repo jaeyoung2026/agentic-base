@@ -37,6 +37,50 @@ src/
 
 dependency-cruiser로 자동 강제.
 
+## Execution 계층 규칙
+
+API 라우트에서 데이터까지의 호출 체인:
+
+```
+Route handler → Domain Access → Repository → Supabase
+```
+
+| 계층              | 위치                           | 역할                           | 규칙                                           |
+| ----------------- | ------------------------------ | ------------------------------ | ---------------------------------------------- |
+| **Repository**    | `src/execution/repository/`    | Artifact CRUD (DB 추상화)      | Supabase 직접 참조. 도메인 모델 반환           |
+| **Domain Access** | `src/execution/domain-access/` | 타입 검증 래퍼                 | Repository만 의존. 타입 단언으로 서브타입 보장 |
+| **Services**      | `src/execution/services/`      | 외부 연결 (LLM, 3rd party API) | Repository/Domain Access와 독립                |
+
+- Route handler는 Domain Access 또는 Service만 호출한다. Repository를 직접 호출하지 않는다.
+- Repository의 모든 메서드에 `userId`를 강제한다 (테넌트 격리).
+- DB 스키마(snake_case)와 도메인 모델(camelCase)은 Repository 내부 mapper로 분리한다.
+
+## Product 계층 규칙
+
+`src/product/`는 프로젝트의 비즈니스 로직을 모은다. 템플릿 코어와 분리하는 경계.
+
+| 하위              | 역할                 | 핵심 규칙                                            |
+| ----------------- | -------------------- | ---------------------------------------------------- |
+| `artifact-types/` | Artifact 빌더 함수   | 순수 함수. 도메인 타입만 의존                        |
+| `policies/`       | 검증·시뮬레이션·매핑 | **순수 함수만**. DB·LLM 호출 금지                    |
+| `prompts/`        | LLM 프롬프트 정의    | 입출력 스키마 + 프롬프트 텍스트. 호출은 Services에서 |
+| `tools/`          | 에이전트 도구 정의   | Agent Plane에서 참조                                 |
+
+경계 원칙:
+
+- `policies/`에는 순수 함수만 넣는다. 같은 입력이면 항상 같은 출력.
+- `prompts/`는 프롬프트 텍스트와 Zod 출력 스키마만 정의한다. 실제 LLM 호출은 `src/execution/services/`에서.
+- Artifact 타입이 늘어나면 `artifact-types/`에 빌더 함수를 추가한다. 새 테이블을 만들지 않는다.
+
+## Route Handler 헬퍼
+
+`src/lib/http/route-handler.ts`가 API 라우트의 공통 관심사를 처리한다:
+
+- `parseJsonBody(request)` — JSON 파싱 + InvalidJsonBodyError
+- `formatZodIssues(issues)` — Zod 검증 오류를 읽기 쉬운 문자열 배열로
+
+모든 API 라우트에서 이 헬퍼를 사용한다. 직접 `request.json()`을 호출하지 않는다.
+
 ## 품질 게이트
 
 ```bash
