@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 2,
+  "title": "Agentic Base 스펙 인덱스",
+  "generatedAt": "2026-03-29T13:30:37.829648+09:00",
+  "results": [
+    {
+      "document": {
+        "relativeTo": "specs/index.spec.md",
+        "title": "Agentic Base 스펙 인덱스",
+        "markdown": "---\ntype: spec\n---\n\n# Agentic Base 스펙 인덱스\n\n이 프로젝트의 실행 가능 스펙 목록.\n\n## Domain Contract\n\nArtifact 타입이 정의되어 있어야 한다.\n\n```run:shell\n$ grep -c \"ArtifactType\" src/domain/artifact.ts\n```\n\n## LLM Wrappers\n\nstructuredInference와 streamExecution이 export되어 있어야 한다.\n\n```run:shell\n$ grep -c \"export.*function.*structuredInference\\|export.*function.*streamExecution\" src/lib/llm/inference.ts\n```\n\n## PAR Schema\n\nplanResultSchema와 auditResultSchema가 export되어 있어야 한다.\n\n```run:shell\n$ grep -c \"export const planResultSchema\\|export const auditResultSchema\" src/agent/par/schema.ts\n```\n",
+        "nodes": [
+          {
+            "level": 1,
+            "text": "Agentic Base 스펙 인덱스",
+            "raw": "# Agentic Base 스펙 인덱스\n",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스"
+            ]
+          },
+          {
+            "raw": "\n이 프로젝트의 실행 가능 스펙 목록.\n\n",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스"
+            ]
+          },
+          {
+            "level": 2,
+            "text": "Domain Contract",
+            "raw": "## Domain Contract\n",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스",
+              "Domain Contract"
+            ]
+          },
+          {
+            "raw": "\nArtifact 타입이 정의되어 있어야 한다.\n\n",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스",
+              "Domain Contract"
+            ]
+          },
+          {
+            "block": {
+              "raw": "run:shell",
+              "kind": "run",
+              "target": "shell"
+            },
+            "source": "$ grep -c \"ArtifactType\" src/domain/artifact.ts",
+            "raw": "```run:shell\n$ grep -c \"ArtifactType\" src/domain/artifact.ts\n```\n",
+            "id": {
+              "file": "specs/index.spec.md",
+              "headingPath": [
+                "Agentic Base 스펙 인덱스",
+                "Domain Contract"
+              ],
+              "ordinal": 1
+            }
+          },
+          {
+            "level": 2,
+            "text": "LLM Wrappers",
+            "raw": "## LLM Wrappers\n",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스",
+              "LLM Wrappers"
+            ]
+          },
+          {
+            "raw": "\nstructuredInference와 streamExecution이 export되어 있어야 한다.\n\n",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스",
+              "LLM Wrappers"
+            ]
+          },
+          {
+            "block": {
+              "raw": "run:shell",
+              "kind": "run",
+              "target": "shell"
+            },
+            "source": "$ grep -c \"export.*function.*structuredInference\\|export.*function.*streamExecution\" src/lib/llm/inference.ts",
+            "raw": "```run:shell\n$ grep -c \"export.*function.*structuredInference\\|export.*function.*streamExecution\" src/lib/llm/inference.ts\n```\n",
+            "id": {
+              "file": "specs/index.spec.md",
+              "headingPath": [
+                "Agentic Base 스펙 인덱스",
+                "LLM Wrappers"
+              ],
+              "ordinal": 2
+            }
+          },
+          {
+            "level": 2,
+            "text": "PAR Schema",
+            "raw": "## PAR Schema\n",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스",
+              "PAR Schema"
+            ]
+          },
+          {
+            "raw": "\nplanResultSchema와 auditResultSchema가 export되어 있어야 한다.\n\n",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스",
+              "PAR Schema"
+            ]
+          },
+          {
+            "block": {
+              "raw": "run:shell",
+              "kind": "run",
+              "target": "shell"
+            },
+            "source": "$ grep -c \"export const planResultSchema\\|export const auditResultSchema\" src/agent/par/schema.ts",
+            "raw": "```run:shell\n$ grep -c \"export const planResultSchema\\|export const auditResultSchema\" src/agent/par/schema.ts\n```\n",
+            "id": {
+              "file": "specs/index.spec.md",
+              "headingPath": [
+                "Agentic Base 스펙 인덱스",
+                "PAR Schema"
+              ],
+              "ordinal": 3
+            }
+          }
+        ],
+        "frontmatter": {
+          "type": "spec"
+        }
+      },
+      "status": "passed",
+      "cases": [
+        {
+          "id": {
+            "file": "specs/index.spec.md",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스",
+              "Domain Contract"
+            ],
+            "ordinal": 1
+          },
+          "kind": "code",
+          "status": "passed",
+          "label": "run:shell @ Domain Contract",
+          "durationMs": 6,
+          "events": [
+            {
+              "type": "caseStarted",
+              "id": {
+                "file": "specs/index.spec.md",
+                "headingPath": [
+                  "Agentic Base 스펙 인덱스",
+                  "Domain Contract"
+                ],
+                "ordinal": 1
+              },
+              "label": "run:shell @ Domain Contract"
+            },
+            {
+              "type": "casePassed",
+              "id": {
+                "file": "specs/index.spec.md",
+                "headingPath": [
+                  "Agentic Base 스펙 인덱스",
+                  "Domain Contract"
+                ],
+                "ordinal": 1
+              },
+              "label": "run:shell @ Domain Contract"
+            }
+          ],
+          "code": {
+            "block": "run:shell",
+            "template": "$ grep -c \"ArtifactType\" src/domain/artifact.ts",
+            "renderedSource": "$ grep -c \"ArtifactType\" src/domain/artifact.ts",
+            "steps": [
+              {
+                "command": "grep -c \"ArtifactType\" src/domain/artifact.ts",
+                "expected": "",
+                "actual": "4",
+                "status": "passed"
+              }
+            ]
+          }
+        },
+        {
+          "id": {
+            "file": "specs/index.spec.md",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스",
+              "LLM Wrappers"
+            ],
+            "ordinal": 2
+          },
+          "kind": "code",
+          "status": "passed",
+          "label": "run:shell @ LLM Wrappers",
+          "durationMs": 5,
+          "events": [
+            {
+              "type": "caseStarted",
+              "id": {
+                "file": "specs/index.spec.md",
+                "headingPath": [
+                  "Agentic Base 스펙 인덱스",
+                  "LLM Wrappers"
+                ],
+                "ordinal": 2
+              },
+              "label": "run:shell @ LLM Wrappers"
+            },
+            {
+              "type": "casePassed",
+              "id": {
+                "file": "specs/index.spec.md",
+                "headingPath": [
+                  "Agentic Base 스펙 인덱스",
+                  "LLM Wrappers"
+                ],
+                "ordinal": 2
+              },
+              "label": "run:shell @ LLM Wrappers"
+            }
+          ],
+          "code": {
+            "block": "run:shell",
+            "template": "$ grep -c \"export.*function.*structuredInference\\|export.*function.*streamExecution\" src/lib/llm/inference.ts",
+            "renderedSource": "$ grep -c \"export.*function.*structuredInference\\|export.*function.*streamExecution\" src/lib/llm/inference.ts",
+            "steps": [
+              {
+                "command": "grep -c \"export.*function.*structuredInference\\|export.*function.*streamExecution\" src/lib/llm/inference.ts",
+                "expected": "",
+                "actual": "2",
+                "status": "passed"
+              }
+            ]
+          }
+        },
+        {
+          "id": {
+            "file": "specs/index.spec.md",
+            "headingPath": [
+              "Agentic Base 스펙 인덱스",
+              "PAR Schema"
+            ],
+            "ordinal": 3
+          },
+          "kind": "code",
+          "status": "passed",
+          "label": "run:shell @ PAR Schema",
+          "durationMs": 4,
+          "events": [
+            {
+              "type": "caseStarted",
+              "id": {
+                "file": "specs/index.spec.md",
+                "headingPath": [
+                  "Agentic Base 스펙 인덱스",
+                  "PAR Schema"
+                ],
+                "ordinal": 3
+              },
+              "label": "run:shell @ PAR Schema"
+            },
+            {
+              "type": "casePassed",
+              "id": {
+                "file": "specs/index.spec.md",
+                "headingPath": [
+                  "Agentic Base 스펙 인덱스",
+                  "PAR Schema"
+                ],
+                "ordinal": 3
+              },
+              "label": "run:shell @ PAR Schema"
+            }
+          ],
+          "code": {
+            "block": "run:shell",
+            "template": "$ grep -c \"export const planResultSchema\\|export const auditResultSchema\" src/agent/par/schema.ts",
+            "renderedSource": "$ grep -c \"export const planResultSchema\\|export const auditResultSchema\" src/agent/par/schema.ts",
+            "steps": [
+              {
+                "command": "grep -c \"export const planResultSchema\\|export const auditResultSchema\" src/agent/par/schema.ts",
+                "expected": "",
+                "actual": "2",
+                "status": "passed"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "specsTotal": 1,
+    "specsPassed": 1,
+    "specsFailed": 0,
+    "casesTotal": 3,
+    "casesPassed": 3,
+    "casesFailed": 0,
+    "casesExpectedFail": 0
+  }
+}

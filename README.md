@@ -30,25 +30,25 @@ Import 방향: `Product → Agent → Execution` 만 허용. 역방향은 depend
 
 ### LLM 이원화
 
-| 수준 | 래퍼 | 용도 |
-|------|------|------|
+| 수준            | 래퍼                    | 용도                            |
+| --------------- | ----------------------- | ------------------------------- |
 | Plan (에이전트) | `structuredInference()` | 구조화된 추론 → Zod 스키마 JSON |
-| Execute (실행) | `streamExecution()` | 스트리밍 응답 + tool use |
+| Execute (실행)  | `streamExecution()`     | 스트리밍 응답 + tool use        |
 
 모델: `gemini-3-flash-preview` (기본). `src/lib/llm/inference.ts` 한 파일만 바꾸면 프로바이더 교체 가능.
 
 ## 기술 스택
 
-| 영역 | 선택 |
-|------|------|
-| 프레임워크 | Next.js 16 + React 19 |
-| AI | Vercel AI SDK 6 + Gemini |
-| 인증 + DB | Supabase (Auth + PostgreSQL) |
-| 상태 | Zustand (임시 UI 상태만) |
-| 스타일 | Tailwind CSS v4 |
-| 검증 | Zod 3 + TypeScript strict |
-| 테스트 | Vitest + v8 coverage |
-| 스펙 | [specdown](https://github.com/corca-ai/specdown) (마크다운 실행 가능 스펙) |
+| 영역       | 선택                                                                       |
+| ---------- | -------------------------------------------------------------------------- |
+| 프레임워크 | Next.js 16 + React 19                                                      |
+| AI         | Vercel AI SDK 6 + Gemini                                                   |
+| 인증 + DB  | Supabase (Auth + PostgreSQL)                                               |
+| 상태       | Zustand (임시 UI 상태만)                                                   |
+| 스타일     | Tailwind CSS v4                                                            |
+| 검증       | Zod 3 + TypeScript strict                                                  |
+| 테스트     | Vitest + v8 coverage                                                       |
+| 스펙       | [specdown](https://github.com/corca-ai/specdown) (마크다운 실행 가능 스펙) |
 
 ## 디렉토리 구조
 
@@ -71,16 +71,16 @@ src/
 
 `npm run quality:check` 한 번으로 전체 게이트 실행:
 
-| 게이트 | 도구 | 경계 |
-|--------|------|------|
-| Formatter | Prettier | 표현의 경계 |
-| Linter | ESLint + next/typescript | 규칙의 경계 |
-| jscpd | jscpd | 책임의 경계 |
-| Test coverage | Vitest + v8 | 검증의 경계 |
-| knip | knip | 존재의 경계 |
-| dependency-cruiser | dependency-cruiser | 의존의 경계 |
-| tloc | check-test-ratio | 비율의 경계 |
-| specdown | specdown | 스펙의 경계 |
+| 게이트             | 도구                     | 경계        |
+| ------------------ | ------------------------ | ----------- |
+| Formatter          | Prettier                 | 표현의 경계 |
+| Linter             | ESLint + next/typescript | 규칙의 경계 |
+| jscpd              | jscpd                    | 책임의 경계 |
+| Test coverage      | Vitest + v8              | 검증의 경계 |
+| knip               | knip                     | 존재의 경계 |
+| dependency-cruiser | dependency-cruiser       | 의존의 경계 |
+| tloc               | check-test-ratio         | 비율의 경계 |
+| specdown           | specdown                 | 스펙의 경계 |
 
 에이전트가 만드는 코드의 약점(탈출구, 코드 삭제 안 함, 중복 테스트)을 자동으로 잡는다.
 
@@ -111,26 +111,26 @@ npm run dev
 
 ## 템플릿이 제공하는 것 vs 직접 만들 것
 
-| 제공 (초기 세팅) | 직접 만들 것 (비즈니스 로직) |
-|------------------|---------------------------|
-| 3-Plane 디렉토리 구조 | Artifact 타입 확장 |
-| Artifact 인터페이스 + Zod 스키마 | 에이전트 도구 구현 |
-| LLM 이원화 래퍼 | 프롬프트, profile YAML |
-| PAR Loop 스키마 (plan + audit) | 정책, 시나리오 |
-| Supabase Auth + DB 배선 | 추가 도메인 테이블 |
-| 관측 레이어 (observe + track) | memory, cost, ranking 정책 |
-| 품질 게이트 전체 체인 | 실제 UI/UX |
-| specdown 초기 스펙 | 외부 서비스 통합 |
+| 제공 (초기 세팅)                 | 직접 만들 것 (비즈니스 로직) |
+| -------------------------------- | ---------------------------- |
+| 3-Plane 디렉토리 구조            | Artifact 타입 확장           |
+| Artifact 인터페이스 + Zod 스키마 | 에이전트 도구 구현           |
+| LLM 이원화 래퍼                  | 프롬프트, profile YAML       |
+| PAR Loop 스키마 (plan + audit)   | 정책, 시나리오               |
+| Supabase Auth + DB 배선          | 추가 도메인 테이블           |
+| 관측 레이어 (observe + track)    | memory, cost, ranking 정책   |
+| 품질 게이트 전체 체인            | 실제 UI/UX                   |
+| specdown 초기 스펙               | 외부 서비스 통합             |
 
 ## 에이전트 스킬
 
 코드 작성 에이전트(Claude Code, Codex)를 위한 스킬이 내장되어 있다:
 
-| 스킬 | 대상 | 내용 |
-|------|------|------|
-| next-best-practices | Codex | Next.js 16 파일 규칙, RSC 경계, async 패턴 |
-| vercel-react-best-practices | Codex | React 성능 최적화 65규칙 |
-| specdown | Claude Code | specdown 문법, CLI, traceability |
+| 스킬                        | 대상        | 내용                                       |
+| --------------------------- | ----------- | ------------------------------------------ |
+| next-best-practices         | Codex       | Next.js 16 파일 규칙, RSC 경계, async 패턴 |
+| vercel-react-best-practices | Codex       | React 성능 최적화 65규칙                   |
+| specdown                    | Claude Code | specdown 문법, CLI, traceability           |
 
 ## 원칙 문서
 

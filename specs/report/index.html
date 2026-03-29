@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Agentic Base 스펙 인덱스</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main>
+    <div class="layout">
+      <aside class="toc" aria-label="Table of contents">
+        <div class="toc-inner">
+          <p class="toc-title">Contents</p>
+          
+          
+          
+          <section class="toc-spec current">
+            <div class="toc-spec-header"><span class="toc-type-badge" style="--type-hue:187">spec</span><span class="toc-spec-title ">Agentic Base 스펙 인덱스</span></div>
+            
+            
+            <ul class="toc-list">
+              
+              <li class="toc-item" data-anchor="section-specs-index-spec-md-agentic-base-스펙-인덱스-domain-contract">
+                <a class="toc-link toc-level-2 " href="#section-specs-index-spec-md-agentic-base-%ec%8a%a4%ed%8e%99-%ec%9d%b8%eb%8d%b1%ec%8a%a4-domain-contract">Domain Contract</a>
+                
+              </li>
+              
+              <li class="toc-item" data-anchor="section-specs-index-spec-md-agentic-base-스펙-인덱스-llm-wrappers">
+                <a class="toc-link toc-level-2 " href="#section-specs-index-spec-md-agentic-base-%ec%8a%a4%ed%8e%99-%ec%9d%b8%eb%8d%b1%ec%8a%a4-llm-wrappers">LLM Wrappers</a>
+                
+              </li>
+              
+              <li class="toc-item" data-anchor="section-specs-index-spec-md-agentic-base-스펙-인덱스-par-schema">
+                <a class="toc-link toc-level-2 " href="#section-specs-index-spec-md-agentic-base-%ec%8a%a4%ed%8e%99-%ec%9d%b8%eb%8d%b1%ec%8a%a4-par-schema">PAR Schema</a>
+                
+              </li>
+              
+            </ul>
+            
+          </section>
+          
+          
+          
+        </div>
+      </aside>
+
+      <div class="content">
+        <div class="content-header">
+          <p class="content-meta"><span class="doc-type" style="--type-hue:187">spec</span><span class="pill pass">3 passed</span><span class="pill fail">0 failed</span></p>
+        </div>
+        <div class="content-body">
+          <article class="spec">
+            <section class="spec-body"><section class="s1" id="section-specs-index-spec-md-agentic-base-스펙-인덱스"><h1>Agentic Base 스펙 인덱스</h1>
+<p>이 프로젝트의 실행 가능 스펙 목록.</p>
+<section class="s2" id="section-specs-index-spec-md-agentic-base-스펙-인덱스-domain-contract"><h2>Domain Contract</h2>
+<p>Artifact 타입이 정의되어 있어야 한다.</p>
+<section class="exec-block passed" id="case-specs-index-spec-md-agentic-base-스펙-인덱스-domain-contract-1"><div class="exec-source"><div class="doctest-steps"><div class="doctest-command"><span class="doctest-prompt">$ </span>grep -c &#34;ArtifactType&#34; src/domain/artifact.ts</div><div class="doctest-output passed">4</div></div></div><p class="exec-block-footer">run:shell</p></section></section><section class="s2" id="section-specs-index-spec-md-agentic-base-스펙-인덱스-llm-wrappers"><h2>LLM Wrappers</h2>
+<p>structuredInference와 streamExecution이 export되어 있어야 한다.</p>
+<section class="exec-block passed" id="case-specs-index-spec-md-agentic-base-스펙-인덱스-llm-wrappers-2"><div class="exec-source"><div class="doctest-steps"><div class="doctest-command"><span class="doctest-prompt">$ </span>grep -c &#34;export.*function.*structuredInference\|export.*function.*streamExecution&#34; src/lib/llm/inference.ts</div><div class="doctest-output passed">2</div></div></div><p class="exec-block-footer">run:shell</p></section></section><section class="s2" id="section-specs-index-spec-md-agentic-base-스펙-인덱스-par-schema"><h2>PAR Schema</h2>
+<p>planResultSchema와 auditResultSchema가 export되어 있어야 한다.</p>
+<section class="exec-block passed" id="case-specs-index-spec-md-agentic-base-스펙-인덱스-par-schema-3"><div class="exec-source"><div class="doctest-steps"><div class="doctest-command"><span class="doctest-prompt">$ </span>grep -c &#34;export const planResultSchema\|export const auditResultSchema&#34; src/agent/par/schema.ts</div><div class="doctest-output passed">2</div></div></div><p class="exec-block-footer">run:shell</p></section></section></section></section>
+          </article>
+        </div>
+      </div>
+      
+      <div class="mobile-title" aria-hidden="true">
+        <h1>Agentic Base 스펙 인덱스</h1>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <hr>
+    <p><a href="https://github.com/corca-ai/specdown">github.com/corca-ai/specdown</a></p>
+  </footer>
+  <script src="./script.js"></script>
+</body>
+</html>

@@ -16,6 +16,7 @@
     "husky",
     "tailwindcss",
     "typescript-eslint",
-    "zustand"
+    "zustand",
+    "yaml"
   ]
 }

@@ -50,14 +50,13 @@ function resolveSpecdownBinary() {
 
 const binaryPath = resolveSpecdownBinary();
 if (!binaryPath) {
-  console.error(
+  console.warn(
     [
-      "ERROR: runnable SpecDown binary not found.",
-      "Install the executable SpecDown CLI, then retry:",
-      "curl -sSfL https://raw.githubusercontent.com/corca-ai/specdown/main/install.sh | sh",
+      "[specdown] WARNING: specdown binary not found — skipping spec verification.",
+      "Install: curl -sSfL https://raw.githubusercontent.com/corca-ai/specdown/main/install.sh | sh",
     ].join("\n"),
   );
-  process.exit(1);
+  process.exit(0);
 }
 
 const args = process.argv.slice(2);
