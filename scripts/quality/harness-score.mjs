@@ -166,6 +166,21 @@ const axes = [];
     weight: 2,
   });
   items.push({
+    name: "Story Chain validator",
+    ok: exists("scripts/mission-control/mc-validate-story-chain.mjs"),
+    weight: 2,
+  });
+  items.push({
+    name: "Baseline ledger",
+    ok: exists("scripts/mission-control/baselines/alignment-debt.json"),
+    weight: 2,
+  });
+  items.push({
+    name: "Surface audit",
+    ok: exists("scripts/mission-control/mc-audit-surface.mjs"),
+    weight: 2,
+  });
+  items.push({
     name: "설계 검증 (spec-scope)",
     ok: exists("scripts/spec-scope/cli.mjs"),
     weight: 2,

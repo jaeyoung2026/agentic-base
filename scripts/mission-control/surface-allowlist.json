@@ -1,0 +1,13 @@
+{
+  "infrastructure": [
+    "src/app/api/health/route.ts",
+    "src/app/globals.css",
+    "src/lib/http/route-handler.ts"
+  ],
+  "backfillBacklog": [
+    "src/app/api/chat/route.ts",
+    "src/app/api/events/route.ts",
+    "src/app/layout.tsx",
+    "src/app/page.tsx"
+  ]
+}

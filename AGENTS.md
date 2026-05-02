@@ -174,14 +174,38 @@ npm run quality:check  # 전체 게이트 실행
 
 clone 직후 `npm install`이 `package.json`의 `prepare` 스크립트로 `husky install`을 실행해 로컬 hook 경로를 설치한다.
 
-| 경로                | 실행                      | 역할              |
-| ------------------- | ------------------------- | ----------------- |
-| `.husky/pre-commit` | `npm run quality:commit`  | commit 전 게이트  |
-| `.husky/pre-push`   | `npm run quality:prepush` | push 전 전체 검증 |
+| 경로                | 실행                      | 역할                                          |
+| ------------------- | ------------------------- | --------------------------------------------- |
+| `.husky/pre-commit` | `npm run quality:commit`  | commit 전 staged alignment gate + commit gate |
+| `.husky/pre-push`   | `npm run quality:prepush` | push 전 전체 검증                             |
 
-이 템플릿의 hook은 staged fast-skip을 두지 않는다. pre-commit은 `quality:commit` 전체(guards + lint-staged)를 실행하고, pre-push는 `quality:prepush`가 연결한 `quality:check` 전체를 실행한다. clone 직후부터 로컬 hook과 CI가 같은 품질 경로를 바라보게 만드는 것이 Phase 0 enforcement baseline이다.
+이 템플릿의 alignment hook은 staged fast-skip을 둔다. pre-commit은 staged 변경이 `docs/contracts/story-chain/`, `docs/contracts/feature-specs.md`, `scripts/mission-control/`에 닿을 때만 Mission Control gate를 돌리고, 이후 `quality:guards`와 `lint-staged`를 실행한다. pre-push는 `quality:prepush`가 연결한 `quality:check` 전체를 실행한다. clone 직후부터 로컬 hook과 CI가 같은 품질 경로를 바라보게 만드는 것이 Phase 0 enforcement baseline이다.
 
 Generated artifact는 commit하지 않는다. `specs/report.json`, `specs/report/`, `.spec-scope-out/`은 실행 결과물이며 정본이 아니다. specdown 산출물은 commit하지 않고, 검증 실행이 worktree를 dirty하게 만들지 않도록 로컬/CI artifact로만 본다.
+
+### Validation Pipeline
+
+Mission Control 검증은 세 층으로 강제한다.
+
+| 층         | 실행                            | 범위                                           |
+| ---------- | ------------------------------- | ---------------------------------------------- |
+| pre-commit | `npm run quality:commit`        | staged alignment 영향 파일만 fast-skip 후 검사 |
+| pre-push   | `npm run quality:prepush`       | `quality:check` 전체                           |
+| CI         | `.github/workflows/quality.yml` | main push와 PR의 `quality:check` backstop      |
+
+`mc:validate-story-chain`은 4-edge Acceptance Check trace, `run:shell` code trace, Aspect own verdict, Sufficiency Review verdict trichotomy를 검사한다. `mc:check-new-criticals`는 이 finding을 baseline과 비교하고, `mc:audit-surface`는 약속 밖 user-facing surface를 따로 잡는다. Story Chain이 아직 `_TEMPLATE`만 가진 빈 상태라면 Mission Control validator는 `0 findings, skipped`로 통과한다.
+
+### Baseline Policy-Green
+
+`mc:check-new-criticals`의 green은 총 finding 0이라는 뜻이 아니라 baseline 기준 신규 critical 0이라는 뜻이다. 기존 부채는 `scripts/mission-control/baselines/alignment-debt.json`에 stable signature로 고정하고, 새 critical과 warning→critical severity escalation만 blocking으로 본다.
+
+Stable signature 형식은 `{category}|story={US-ID}|ac={ACN}|spec={path}|cmd={cmd}`다. baseline 갱신은 `npm run mc:check-new-criticals -- --update-baseline`로 명시 실행할 때만 허용한다. silent prune은 금지한다. 부채를 갚아 finding이 사라져도 check 모드는 baseline을 자동으로 줄이지 않고, 운영자가 명시적으로 갱신해 lock-in한다.
+
+### Surface Audit
+
+`mc:audit-surface`는 `src/features/`, `src/app/(workspace)/`, `src/app/api/` route handler, `src/app/page.tsx`, `src/app/layout.tsx` 중 상단에 `// @promise`, `// @aspect`, `// @check` 태그가 없는 user-facing 파일을 orphan으로 본다.
+
+Allowlist는 두 층이다. `infrastructure`는 framework 경계와 health route 같은 영구 면제고, `backfillBacklog`는 첫 Promise 이전부터 존재한 surface를 다음 PR에서 닫을 한시 부채로 추적한다. Promise가 0개인 현재 skeleton 상태에서는 untagged surface가 backfill backlog warning으로만 분류되고 critical이 아니다. Promise가 하나 이상 land된 뒤 새 orphan이 생기면 critical로 막는다.
 
 ### 관심사 중앙화
 
