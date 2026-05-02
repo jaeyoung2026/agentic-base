@@ -12,6 +12,76 @@
 4. **품질 게이트** — 선언 → 실행 → 검증. 설계·구현·관심사 모든 층에 재귀 적용
 5. **모든 것은 파일이다** — 추상화를 하나로 수렴
 
+## Authority
+
+agentic-base는 권한을 네 칩으로 분리한다. 이 구분은 누가 행동하는가가 아니라 누가 결정할 수 있는가를 뜻한다.
+
+| Chip  | 이름                               | agentic-base 매핑                                                                        |
+| ----- | ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| **H** | Human — normative authority        | 정본 markdown 작성자. Promise, Intent Check, Acceptance Check, Aspect 의미와 철회 승인권 |
+| **A** | Agent — translation authority      | `src/product/`와 `src/agent/` 작성. 계약을 spec, code, test, eval로 전파                 |
+| **E** | Evaluator — truth signal authority | judge/eval 실행. verdict 신호를 만들지만 계약 의미를 바꾸지 않음                         |
+| **S** | System — constraint authority      | husky, CI, ESLint, specdown, `harness:score`, dependency-cruiser, concern guard          |
+
+에이전트는 A authority만 가진다. H 결정을 흉내 내거나 E verdict를 evidence 없이 닫지 않는다.
+
+## Layer
+
+| Layer        | 소유 authority | agentic-base 위치                                                                                                        |
+| ------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Contract     | H              | `docs/contracts/story-chain/`, `docs/contracts/feature-specs.md`, `docs/reality-feedback.md`, `docs/intent-judgments.md` |
+| Propagation  | A              | `docs/contracts/story-chain/specs/*.spec.md`, `src/product/`, `src/agent/`, 관련 test/eval 산출물                        |
+| Enforcement  | S              | `.husky/`, `.github/workflows/`, `scripts/quality/`, ESLint, TypeScript, specdown, dependency-cruiser                    |
+| Verification | E              | `vitest`, `run:shell`, judge/eval 결과, rendered DOM 또는 runtime output evidence                                        |
+
+Contract → Propagation → Enforcement → Verification 순서로 의미가 내려간다. 역방향 현실 신호는 `docs/reality-feedback.md`에 남기고 Contract를 다시 연다.
+
+## Verdict Trichotomy
+
+Verdict는 `met`, `not-met`, `unknown` 셋뿐이다.
+
+| Verdict   | 의미                                                  |
+| --------- | ----------------------------------------------------- |
+| `met`     | production-equivalent evidence가 약속 충족을 보여준다 |
+| `not-met` | 실행된 truth signal이 약속 미달을 보여준다            |
+| `unknown` | 판정 부채가 남아 있으며 blocking이다                  |
+
+`unknown` 발생 조건:
+
+- evaluator가 돌지 않았다
+- evidence가 부족하다
+- rubric 또는 answer criteria가 약하다
+- 입력이 production-equivalent가 아니다
+- 결과가 흔들려 `met`이나 `not-met`을 말하기 어렵다
+
+`met`은 `runtime-output` 또는 `rendered-dom` evidence ref 없이 선언하지 않는다. `not-met`과 `unknown`은 `gateNotes`나 ledger 본문에 사유를 남긴다.
+
+## Escalation Protocol
+
+에이전트가 H authority를 대신해야 하거나, evidence 없이 verdict를 닫아야 하거나, 계약과 현실 신호가 충돌하면 멈추고 아래 형식으로 보고한다.
+
+```text
+STATUS: NEEDS_HUMAN
+ROW: <promise/aspect/spec/check ref>
+WHY: <advance 못 하는 이유 한 줄>
+DATA: <관련 verdict, signal, 파일 ref>
+RECOMMENDATION: <후보안 1-2개>
+```
+
+STOP 조건:
+
+- Promise는 있는데 Intent Check나 Acceptance Check가 비어 있다
+- Intent Check가 Acceptance Check의 재서술처럼 보인다
+- 같은 Promise 안에서 Intent Check와 Acceptance Check가 충돌한다
+- covering spec, owner, evidence path가 비어 있다
+- `unknown` 또는 `not-met`인데 enforcement가 이를 막지 않는다
+- 문서 계약과 운영 관찰이 반복해서 어긋난다
+- 철회 결정이나 intent-absorbed 처리가 필요하지만 Human Judgment Gate ref가 없다
+
+## Abstraction Reduction over Guard Accumulation
+
+guard를 추가하기 전에 abstraction 자체를 줄일 수 있는지 먼저 검토한다. 잘못된 경계를 test, lint, policy advice로 계속 둘러싸기보다, 그 잘못된 상태를 표현하기 어려운 구조로 바꾸는 편이 우선이다. guard는 abstraction reduction을 검토한 뒤의 fallback이다.
+
 ## 구조
 
 ```
@@ -111,7 +181,7 @@ clone 직후 `npm install`이 `package.json`의 `prepare` 스크립트로 `husky
 
 이 템플릿의 hook은 staged fast-skip을 두지 않는다. pre-commit은 `quality:commit` 전체(guards + lint-staged)를 실행하고, pre-push는 `quality:prepush`가 연결한 `quality:check` 전체를 실행한다. clone 직후부터 로컬 hook과 CI가 같은 품질 경로를 바라보게 만드는 것이 Phase 0 enforcement baseline이다.
 
-Generated artifact는 commit하지 않는다. `specs/report.json`, `specs/report/`, `.spec-scope-out/`은 실행 결과물이며 정본이 아니다. specdown과 spec-scope는 검증 시 다시 생성하거나 로컬/CI artifact로만 본다.
+Generated artifact는 commit하지 않는다. `specs/report.json`, `specs/report/`, `.spec-scope-out/`은 실행 결과물이며 정본이 아니다. specdown 산출물은 commit하지 않고, 검증 실행이 worktree를 dirty하게 만들지 않도록 로컬/CI artifact로만 본다.
 
 ### 관심사 중앙화
 

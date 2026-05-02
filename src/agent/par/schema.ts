@@ -33,15 +33,32 @@ export type PlanResult = z.infer<typeof planResultSchema>;
 
 // ─── Audit 결과 ────────────────────────────────────────────
 
-export const auditResultSchema = z.object({
-  violations: z.array(
-    z.object({
-      promise_id: z.string(),
-      description: z.string(),
-      severity: z.enum(["error", "warning", "info"]),
-    }),
-  ),
-  passed: z.boolean(),
+const auditEvidenceSchema = z.object({
+  kind: z.enum(["runtime-output", "rendered-dom"]),
+  ref: z.string().min(1),
 });
+
+export const auditResultSchema = z
+  .object({
+    violations: z.array(
+      z.object({
+        promise_id: z.string(),
+        description: z.string(),
+        severity: z.enum(["error", "warning", "info"]),
+      }),
+    ),
+    verdict: z.enum(["met", "not-met", "unknown"]).default("unknown"),
+    evidence: auditEvidenceSchema.optional(),
+    gateNotes: z.string().optional(),
+  })
+  .superRefine((audit, context) => {
+    if (audit.verdict === "met" && !audit.evidence) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "met verdict requires production-equivalent evidence",
+        path: ["evidence"],
+      });
+    }
+  });
 
 export type AuditResult = z.infer<typeof auditResultSchema>;

@@ -27,8 +27,8 @@ export async function handleTurn(deps: {
   const response = await deps.executeFn(plan);
   const audit = await deps.auditFn(plan, response);
 
-  // 폐루프: audit 실패 시 repair
-  if (!audit.passed) {
+  // 폐루프: unknown/not-met audit은 blocking으로 보고 repair
+  if (audit.verdict !== "met") {
     const repaired = await deps.repairFn(plan, audit);
     return { plan, response: repaired, audit, repaired: true };
   }
