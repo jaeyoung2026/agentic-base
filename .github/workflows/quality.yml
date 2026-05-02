@@ -1,0 +1,30 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install specdown
+        run: curl -sSfL https://raw.githubusercontent.com/corca-ai/specdown/main/install.sh | sh
+
+      - name: Add Local Bin To PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - run: npm run quality:check

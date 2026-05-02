@@ -4,3 +4,6 @@ node_modules/
 .env.local
 coverage/
 *.tsbuildinfo
+.spec-scope-out/
+specs/report.json
+specs/report/
