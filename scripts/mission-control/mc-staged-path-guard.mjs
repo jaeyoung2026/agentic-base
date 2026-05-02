@@ -21,14 +21,33 @@ const REPO_ROOT = resolve(__dirname, "../..");
 
 const RUBRICS_PREFIX = "docs/contracts/story-chain/rubrics/";
 const EVIDENCE_PREFIX = "docs/contracts/story-chain/evidence/";
-const META_FILES = new Set([".gitkeep", "README.md"]);
+
+// 디렉토리 root level의 메타 파일만 허용한다.
+// `rubrics/foo/README.md` 같은 깊은 path는 차단 — 신규 rubric을 README로 위장해 들이는 우회 방지.
+const META_FILE_EXACT = new Set([
+  `${RUBRICS_PREFIX}README.md`,
+  `${RUBRICS_PREFIX}.gitkeep`,
+  `${EVIDENCE_PREFIX}README.md`,
+  `${EVIDENCE_PREFIX}.gitkeep`,
+]);
 
 function getStagedFiles() {
   const result = spawnSync("git", ["diff", "--cached", "--name-only"], {
     cwd: REPO_ROOT,
     encoding: "utf8",
   });
-  if (result.status !== 0) return [];
+  // git 실패는 fail-closed — staged 정보를 신뢰할 수 없으면 commit을 막는다.
+  if (result.status !== 0) {
+    process.stderr.write("STATUS: NEEDS_HUMAN\nROW: mc:staged-path-guard\n");
+    process.stderr.write(
+      `WHY: git diff --cached failed (status=${result.status}). Cannot verify E authority isolation.\n`,
+    );
+    if (result.stderr) process.stderr.write(`DATA: ${result.stderr.trim()}\n`);
+    process.stderr.write(
+      "RECOMMENDATION: ensure this is a git repo and the working tree is initialized. If running in a non-git context, skip mc:staged-path-guard explicitly.\n",
+    );
+    process.exit(1);
+  }
   return result.stdout
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -36,8 +55,7 @@ function getStagedFiles() {
 }
 
 function isMetaFile(path) {
-  const name = path.split("/").at(-1) ?? "";
-  return META_FILES.has(name);
+  return META_FILE_EXACT.has(path);
 }
 
 function main() {

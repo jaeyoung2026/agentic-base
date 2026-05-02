@@ -99,13 +99,29 @@ export function getTableRows(nodes) {
 }
 
 /**
+ * 노드의 텍스트를 모으되 inline code(`...`)는 제외한다.
+ * `\`Verdict: met\`` 같은 인용 텍스트가 verdict로 잘못 잡히지 않도록.
+ */
+export function nodeTextWithoutInlineCode(node) {
+  if (!node || typeof node !== "object") return "";
+  if (node.type === "inlineCode") return "";
+  if (node.type === "code") return "";
+  if (node.type === "text") return node.value ?? "";
+  if (Array.isArray(node.children)) {
+    return node.children.map(nodeTextWithoutInlineCode).join("");
+  }
+  return "";
+}
+
+/**
  * paragraph와 list item을 노드 단위로 순회하면서 첫 매칭 key-value를 뽑는다.
  * 두 paragraph가 합쳐져 false 매칭(`metEvidence`)을 만들지 않도록 노드 경계를 지킨다.
+ * inline code는 제외해 인용 텍스트가 매칭되지 않도록 한다.
  */
 export function extractKeyValues(nodes, keys) {
   const result = {};
   const visit = (node) => {
-    const text = nodeToString(node);
+    const text = nodeTextWithoutInlineCode(node);
     for (const key of keys) {
       if (result[key] !== undefined) continue;
       const pattern = new RegExp(`^\\s*-?\\s*${key}\\s*:\\s*(.+?)\\s*$`, "im");

@@ -25,16 +25,27 @@ const PROMISES_DIR = join(REPO_ROOT, "docs/contracts/story-chain/promises");
 const TEMPLATE_PATH = join(PROMISES_DIR, "_TEMPLATE.md");
 const LANES_CONFIG = join(__dirname, "lanes.json");
 
+const DEFAULT_LANES = ["product", "agent", "execution", "admin", "other"];
+
 function loadValidLanes() {
+  if (!existsSync(LANES_CONFIG)) {
+    return new Set(DEFAULT_LANES);
+  }
   try {
     const raw = JSON.parse(readFileSync(LANES_CONFIG, "utf8"));
     if (Array.isArray(raw.valid) && raw.valid.every((entry) => typeof entry === "string")) {
       return new Set(raw.valid);
     }
-  } catch {
-    /* fall through */
+    process.stderr.write(
+      `WARNING: ${LANES_CONFIG} has unexpected shape (expected { "valid": [...strings] }). Falling back to default lanes.\n`,
+    );
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    process.stderr.write(
+      `WARNING: ${LANES_CONFIG} parse failed (${reason}). Falling back to default lanes.\n`,
+    );
   }
-  return new Set(["product", "agent", "execution", "admin", "other"]);
+  return new Set(DEFAULT_LANES);
 }
 
 const VALID_LANES = loadValidLanes();

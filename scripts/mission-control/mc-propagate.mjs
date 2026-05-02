@@ -15,7 +15,7 @@
  *   - 이미 존재하는 (promiseId, acId) 조합은 건너뛴다.
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -93,9 +93,23 @@ function existingCoverageKeys(content) {
 }
 
 /**
+ * Markdown table separator line(`| --- | --- |`, `|:---:|---:|` 등) 식별.
+ * cell이 모두 dash + optional colon + whitespace로만 구성됐는지 본다.
+ */
+function isTableSeparator(line) {
+  return /^\|(\s*:?-+:?\s*\|)+\s*$/.test(line);
+}
+
+/**
  * 섹션 안의 table에 row를 append한다.
- * 단순 string manipulation — table 헤더가 이미 있어야 한다.
- * 헤더가 없으면 null을 반환해 호출자가 STATUS: NEEDS_HUMAN으로 안내한다.
+ * separator 라인을 명시적으로 식별해 header-only table에서도 안전하게 동작한다.
+ *
+ * 동작:
+ *   1. 섹션 안의 separator 라인을 찾는다 (없으면 null 반환).
+ *   2. separator 이후 마지막 data row 다음 위치에 append.
+ *   3. data row가 없으면(header-only) separator 바로 다음에 append.
+ *
+ * 한 섹션에 separator가 여러 개면 _마지막_ separator 기준으로 append.
  */
 function appendRowsToSectionTable(content, sectionHeading, newRowLines) {
   const headingPattern = new RegExp(`^##\\s+${sectionHeading}\\s*$`, "m");
@@ -109,18 +123,52 @@ function appendRowsToSectionTable(content, sectionHeading, newRowLines) {
   const sectionBody = content.slice(sectionStart, sectionEnd);
 
   const lines = sectionBody.split("\n");
-  let lastTableRowIdx = -1;
+  let separatorIdx = -1;
   for (let i = 0; i < lines.length; i += 1) {
-    if (lines[i].startsWith("|") && !/^\|\s*-+\s*\|/.test(lines[i])) {
-      lastTableRowIdx = i;
-    }
+    if (isTableSeparator(lines[i])) separatorIdx = i;
   }
-  if (lastTableRowIdx === -1) return null; // table 헤더 없음
+  if (separatorIdx === -1) return null;
 
+  let lastDataRowIdx = -1;
+  for (let i = separatorIdx + 1; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!line.startsWith("|")) continue;
+    if (isTableSeparator(line)) continue;
+    lastDataRowIdx = i;
+  }
+
+  const insertIdx = lastDataRowIdx >= 0 ? lastDataRowIdx + 1 : separatorIdx + 1;
   const updated = [...lines];
-  updated.splice(lastTableRowIdx + 1, 0, ...newRowLines);
+  updated.splice(insertIdx, 0, ...newRowLines);
   const newBody = updated.join("\n");
   return content.slice(0, sectionStart) + newBody + content.slice(sectionEnd);
+}
+
+/**
+ * read-modify-write race를 줄인다.
+ *  - read 시점의 mtime을 기억
+ *  - write 직전에 mtime이 그대로인지 재확인
+ *  - tmp 파일에 쓰고 rename으로 atomic 교체
+ */
+function readWithMtime(absPath) {
+  const content = readFileSync(absPath, "utf8");
+  const mtimeMs = statSync(absPath).mtimeMs;
+  return { content, mtimeMs };
+}
+
+function atomicWriteIfUnchanged(absPath, expectedMtimeMs, newContent) {
+  if (existsSync(absPath)) {
+    const currentMtime = statSync(absPath).mtimeMs;
+    if (currentMtime !== expectedMtimeMs) {
+      fail(
+        `${absPath} was modified by another process between read and write.`,
+        "Re-run mc:propagate after reviewing the new state.",
+      );
+    }
+  }
+  const tmpPath = `${absPath}.tmp.${process.pid}.${Date.now()}`;
+  writeFileSync(tmpPath, newContent, "utf8");
+  renameSync(tmpPath, absPath);
 }
 
 function main() {
@@ -144,9 +192,11 @@ function main() {
   if (acs.length === 0) fail(`${id} has no acceptanceChecks in frontmatter`);
   if (coveringSpecs.length === 0) fail(`${id} has no coveringSpecs in frontmatter`);
 
-  const featureSpecsContent = existsSync(repoPath(FEATURE_SPECS_PATH))
-    ? readFileSync(repoPath(FEATURE_SPECS_PATH), "utf8")
-    : "";
+  const featureSpecsAbs = repoPath(FEATURE_SPECS_PATH);
+  const featureSpecsRead = existsSync(featureSpecsAbs)
+    ? readWithMtime(featureSpecsAbs)
+    : { content: "", mtimeMs: 0 };
+  const featureSpecsContent = featureSpecsRead.content;
   const existingLedger = existingLedgerKeys(featureSpecsContent);
 
   const ledgerRowsToAdd = [];
@@ -158,11 +208,12 @@ function main() {
 
   const coverageActions = [];
   for (const specRel of coveringSpecs) {
-    if (!existsSync(repoPath(specRel))) {
+    const specAbs = repoPath(specRel);
+    if (!existsSync(specAbs)) {
       coverageActions.push({ specRel, status: "missing", rows: [] });
       continue;
     }
-    const specContent = readFileSync(repoPath(specRel), "utf8");
+    const { content: specContent, mtimeMs } = readWithMtime(specAbs);
     const existing = existingCoverageKeys(specContent);
     const rowsToAdd = [];
     for (const ac of acs) {
@@ -170,7 +221,14 @@ function main() {
         rowsToAdd.push(`| ${id} | ${ac} | (pending) |`);
       }
     }
-    coverageActions.push({ specRel, status: "exists", rows: rowsToAdd });
+    coverageActions.push({
+      specRel,
+      specAbs,
+      mtimeMs,
+      content: specContent,
+      status: "exists",
+      rows: rowsToAdd,
+    });
   }
 
   process.stdout.write(`mc:propagate - ${id}\n`);
@@ -217,21 +275,20 @@ function main() {
         "Add a markdown table with headers `| Promise | Acceptance Check | Covering Spec | Evidence |` under `## Acceptance Check Ledger`, then re-run.",
       );
     }
-    writeFileSync(repoPath(FEATURE_SPECS_PATH), updated, "utf8");
+    atomicWriteIfUnchanged(featureSpecsAbs, featureSpecsRead.mtimeMs, updated);
     process.stdout.write(`\napplied: ${FEATURE_SPECS_PATH} +${ledgerRowsToAdd.length} row(s)\n`);
   }
 
   for (const action of coverageActions) {
     if (action.status !== "exists" || action.rows.length === 0) continue;
-    const specContent = readFileSync(repoPath(action.specRel), "utf8");
-    const updated = appendRowsToSectionTable(specContent, "Coverage By Story", action.rows);
+    const updated = appendRowsToSectionTable(action.content, "Coverage By Story", action.rows);
     if (updated === null) {
       fail(
         `${action.specRel} has no Coverage By Story table header.`,
         "Add a markdown table with headers `| Promise | Acceptance Check | Evidence |` under `## Coverage By Story`, then re-run.",
       );
     }
-    writeFileSync(repoPath(action.specRel), updated, "utf8");
+    atomicWriteIfUnchanged(action.specAbs, action.mtimeMs, updated);
     process.stdout.write(`applied: ${action.specRel} +${action.rows.length} row(s)\n`);
   }
 }

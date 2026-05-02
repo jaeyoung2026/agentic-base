@@ -47,6 +47,7 @@ const INTENT_CATEGORIES = new Set([
   "met_missing_production_evidence",
   "missing_intent_judgment_ref",
   "absorbed_promise_missing_acceptance_check",
+  "invalid_intent_judgment_ref",
 ]);
 
 const INTENT_JUDGMENTS_PATH = "docs/intent-judgments.md";
@@ -326,15 +327,28 @@ function parseSufficiencyEntries(ast) {
 }
 
 function parseIntentJudgmentRefs(value) {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((entry) => {
-      if (typeof entry !== "string") return null;
-      const match = entry.match(/^(promise:[a-z0-9-]+|US-[A-Z0-9-]+)\s*->\s*(.+)$/);
-      if (!match) return null;
-      return { promiseId: match[1].trim(), anchor: match[2].trim() };
-    })
-    .filter(Boolean);
+  if (value === undefined || value === null) return { valid: [], invalid: [] };
+  if (!Array.isArray(value)) {
+    return {
+      valid: [],
+      invalid: [{ raw: JSON.stringify(value), reason: "expected array of strings" }],
+    };
+  }
+  const valid = [];
+  const invalid = [];
+  for (const entry of value) {
+    if (typeof entry !== "string") {
+      invalid.push({ raw: JSON.stringify(entry), reason: "not a string" });
+      continue;
+    }
+    const match = entry.match(/^(promise:[a-z0-9-]+|US-[A-Z0-9-]+)\s*->\s*(.+)$/);
+    if (!match) {
+      invalid.push({ raw: entry, reason: "expected `promise:slug -> anchor`" });
+      continue;
+    }
+    valid.push({ promiseId: match[1].trim(), anchor: match[2].trim() });
+  }
+  return { valid, invalid };
 }
 
 function loadIntentJudgmentAnchors() {
@@ -377,11 +391,13 @@ function parseSpec(path) {
     };
   });
 
+  const refs = parseIntentJudgmentRefs(frontmatter.intentJudgmentRefs);
   return {
     path,
     curated: frontmatter.curated === true,
     intentAbsorbedIntoAcceptance: frontmatter.intentAbsorbedIntoAcceptance === true,
-    intentJudgmentRefs: parseIntentJudgmentRefs(frontmatter.intentJudgmentRefs),
+    intentJudgmentRefs: refs.valid,
+    intentJudgmentRefsInvalid: refs.invalid,
     hasCoverageByStory: hasSection(ast, 2, "Coverage By Story"),
     coverageEntries: parseCoverageEntries(ast),
     runChecks,
@@ -586,6 +602,16 @@ function buildSnapshot() {
   // 9번째 축 — Curated Spec Ledger / intent-absorbed subtype / Human Judgment Gate refs
   const intentJudgmentAnchors = loadIntentJudgmentAnchors();
   for (const spec of specs) {
+    for (const invalidRef of spec.intentJudgmentRefsInvalid) {
+      addFinding(findings, {
+        severity: "critical",
+        category: "invalid_intent_judgment_ref",
+        title: `${spec.path} intentJudgmentRefs entry malformed: ${invalidRef.raw} (${invalidRef.reason})`,
+        specPath: spec.path,
+        evidence: [spec.path],
+      });
+    }
+
     if (!spec.intentAbsorbedIntoAcceptance) continue;
 
     if (spec.intentJudgmentRefs.length === 0) {
@@ -600,9 +626,8 @@ function buildSnapshot() {
     }
 
     for (const ref of spec.intentJudgmentRefs) {
-      const anchorMatched =
-        intentJudgmentAnchors.has(ref.anchor) || intentJudgmentAnchors.has(ref.promiseId);
-      if (!anchorMatched) {
+      // anchor 정확 매칭만 인정 (promiseId fallback 제거 — 우회로 차단)
+      if (!intentJudgmentAnchors.has(ref.anchor)) {
         addFinding(findings, {
           severity: "critical",
           category: "missing_intent_judgment_ref",
