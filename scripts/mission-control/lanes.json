@@ -1,0 +1,4 @@
+{
+  "$comment": "Promise lane taxonomy. agentic-base default — product/agent/execution/admin/other. 새 lane 추가 시 docs/contracts/story-chain/_TEMPLATE.md frontmatter 주석도 함께 갱신.",
+  "valid": ["product", "agent", "execution", "admin", "other"]
+}

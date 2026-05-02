@@ -14,7 +14,7 @@ import {
   getTableRows,
   getRunShellBlocks,
   collectInlineCode,
-  getListItemTexts,
+  extractKeyValues,
   nodeToString,
 } from "./lib/markdown-ast.mjs";
 
@@ -45,7 +45,11 @@ const ASPECT_CATEGORIES = new Set([
 const INTENT_CATEGORIES = new Set([
   "invalid_sufficiency_verdict",
   "met_missing_production_evidence",
+  "missing_intent_judgment_ref",
+  "absorbed_promise_missing_acceptance_check",
 ]);
+
+const INTENT_JUDGMENTS_PATH = "docs/intent-judgments.md";
 
 function repoPath(...parts) {
   return join(REPO_ROOT, ...parts);
@@ -310,21 +314,49 @@ function parseSufficiencyEntries(ast) {
 
   const subsections = getSubsections(sectionNodes, 3);
   return subsections.map((sub) => {
-    const listTexts = getListItemTexts(sub.nodes);
-    const flat = [...listTexts, nodeToString({ type: "root", children: sub.nodes })].join("\n");
-    const verdictMatch = flat.match(/Verdict:\s*([A-Za-z-]+)/i);
-    const evidenceMatch = flat.match(/Evidence:\s*([^\n]+)/i);
+    const kv = extractKeyValues(sub.nodes, ["Verdict", "Evidence", "polId"]);
     return {
       heading: sub.heading,
-      block: flat,
-      verdict: verdictMatch?.[1]?.toLowerCase() ?? null,
-      evidence: evidenceMatch?.[1]?.trim() ?? "",
+      block: nodeToString({ type: "root", children: sub.nodes }),
+      verdict: kv.Verdict?.toLowerCase() ?? null,
+      evidence: kv.Evidence ?? "",
+      polId: kv.polId ?? "",
     };
   });
 }
 
+function parseIntentJudgmentRefs(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) => {
+      if (typeof entry !== "string") return null;
+      const match = entry.match(/^(promise:[a-z0-9-]+|US-[A-Z0-9-]+)\s*->\s*(.+)$/);
+      if (!match) return null;
+      return { promiseId: match[1].trim(), anchor: match[2].trim() };
+    })
+    .filter(Boolean);
+}
+
+function loadIntentJudgmentAnchors() {
+  if (!existsSync(repoPath(INTENT_JUDGMENTS_PATH))) return new Set();
+  const ast = readAst(INTENT_JUDGMENTS_PATH);
+  const anchors = new Set();
+  for (const node of ast.children) {
+    if (node.type !== "heading") continue;
+    const text = nodeToString(node);
+    anchors.add(text);
+    for (const match of text.matchAll(
+      /\b(promise:[a-z0-9-]+|US-[A-Z0-9-]+|AC\d+|acceptance-check:[a-z0-9-]+)\b/g,
+    )) {
+      anchors.add(match[1]);
+    }
+  }
+  return anchors;
+}
+
 function parseSpec(path) {
   const ast = readAst(path);
+  const frontmatter = getFrontmatter(ast);
   const runBlocks = getRunShellBlocks(ast.children);
   const runChecks = runBlocks.map((block) => {
     const executionTargets = extractExecutionTargets(block.command).map(resolveTarget);
@@ -347,6 +379,9 @@ function parseSpec(path) {
 
   return {
     path,
+    curated: frontmatter.curated === true,
+    intentAbsorbedIntoAcceptance: frontmatter.intentAbsorbedIntoAcceptance === true,
+    intentJudgmentRefs: parseIntentJudgmentRefs(frontmatter.intentJudgmentRefs),
     hasCoverageByStory: hasSection(ast, 2, "Coverage By Story"),
     coverageEntries: parseCoverageEntries(ast),
     runChecks,
@@ -543,6 +578,49 @@ function buildSnapshot() {
           title: `${spec.path} declares met without production-equivalent Evidence`,
           specPath: spec.path,
           evidence: [spec.path],
+        });
+      }
+    }
+  }
+
+  // 9번째 축 — Curated Spec Ledger / intent-absorbed subtype / Human Judgment Gate refs
+  const intentJudgmentAnchors = loadIntentJudgmentAnchors();
+  for (const spec of specs) {
+    if (!spec.intentAbsorbedIntoAcceptance) continue;
+
+    if (spec.intentJudgmentRefs.length === 0) {
+      addFinding(findings, {
+        severity: "critical",
+        category: "missing_intent_judgment_ref",
+        title: `${spec.path} declares intentAbsorbedIntoAcceptance but lists no intentJudgmentRefs`,
+        specPath: spec.path,
+        evidence: [spec.path],
+      });
+      continue;
+    }
+
+    for (const ref of spec.intentJudgmentRefs) {
+      const anchorMatched =
+        intentJudgmentAnchors.has(ref.anchor) || intentJudgmentAnchors.has(ref.promiseId);
+      if (!anchorMatched) {
+        addFinding(findings, {
+          severity: "critical",
+          category: "missing_intent_judgment_ref",
+          title: `${spec.path} intentJudgmentRefs ${ref.promiseId} -> ${ref.anchor} not found in ${INTENT_JUDGMENTS_PATH}`,
+          specPath: spec.path,
+          storyId: ref.promiseId,
+          evidence: [spec.path, INTENT_JUDGMENTS_PATH],
+        });
+      }
+      const promise = promiseById.get(ref.promiseId);
+      if (promise && promise.acceptanceChecks.length === 0) {
+        addFinding(findings, {
+          severity: "critical",
+          category: "absorbed_promise_missing_acceptance_check",
+          title: `${ref.promiseId} (intent-absorbed via ${spec.path}) has no acceptance checks`,
+          specPath: spec.path,
+          storyId: ref.promiseId,
+          evidence: [promise.path, spec.path],
         });
       }
     }

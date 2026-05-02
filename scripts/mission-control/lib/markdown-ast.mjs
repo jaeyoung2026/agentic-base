@@ -81,22 +81,46 @@ export function getSubsections(nodes, depth) {
 }
 
 export function getTableRows(nodes) {
-  const tableNode = nodes.find((node) => node.type === "table");
-  if (!tableNode || tableNode.children.length < 2) return [];
-
-  const headers = tableNode.children[0].children.map((cell) =>
-    nodeToString(cell).toLowerCase().trim(),
-  );
-
-  return tableNode.children.slice(1).flatMap((row) => {
-    const cells = row.children.map((cell) => nodeToString(cell).trim());
-    if (cells.every((cell) => cell === "")) return [];
-    const record = {};
-    headers.forEach((header, index) => {
-      record[header] = cells[index] ?? "";
+  const tables = nodes.filter((node) => node.type === "table" && node.children.length >= 2);
+  return tables.flatMap((tableNode) => {
+    const headers = tableNode.children[0].children.map((cell) =>
+      nodeToString(cell).toLowerCase().trim(),
+    );
+    return tableNode.children.slice(1).flatMap((row) => {
+      const cells = row.children.map((cell) => nodeToString(cell).trim());
+      if (cells.every((cell) => cell === "")) return [];
+      const record = {};
+      headers.forEach((header, index) => {
+        record[header] = cells[index] ?? "";
+      });
+      return [record];
     });
-    return [record];
   });
+}
+
+/**
+ * paragraph와 list item을 노드 단위로 순회하면서 첫 매칭 key-value를 뽑는다.
+ * 두 paragraph가 합쳐져 false 매칭(`metEvidence`)을 만들지 않도록 노드 경계를 지킨다.
+ */
+export function extractKeyValues(nodes, keys) {
+  const result = {};
+  const visit = (node) => {
+    const text = nodeToString(node);
+    for (const key of keys) {
+      if (result[key] !== undefined) continue;
+      const pattern = new RegExp(`^\\s*-?\\s*${key}\\s*:\\s*(.+?)\\s*$`, "im");
+      const match = text.match(pattern);
+      if (match) result[key] = match[1].trim();
+    }
+  };
+  for (const node of nodes) {
+    if (node.type === "paragraph") {
+      visit(node);
+    } else if (node.type === "list") {
+      for (const item of node.children) visit(item);
+    }
+  }
+  return result;
 }
 
 /**

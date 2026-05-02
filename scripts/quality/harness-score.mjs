@@ -181,6 +181,26 @@ const axes = [];
     weight: 2,
   });
   items.push({
+    name: "Markdown AST 파서",
+    ok: exists("scripts/mission-control/lib/markdown-ast.mjs"),
+    weight: 1,
+  });
+  items.push({
+    name: "Promise 작성 CLI",
+    ok: exists("scripts/mission-control/mc-add-promise.mjs"),
+    weight: 1,
+  });
+  items.push({
+    name: "Propagate CLI",
+    ok: exists("scripts/mission-control/mc-propagate.mjs"),
+    weight: 1,
+  });
+  items.push({
+    name: "E authority staged guard",
+    ok: exists("scripts/mission-control/mc-staged-path-guard.mjs"),
+    weight: 1,
+  });
+  items.push({
     name: "설계 검증 (spec-scope)",
     ok: exists("scripts/spec-scope/cli.mjs"),
     weight: 2,

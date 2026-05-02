@@ -19,7 +19,8 @@
     "guard:test-ratio": "node scripts/quality/check-test-ratio.mjs",
     "guard:concerns": "node scripts/quality/check-concerns.mjs",
     "quality:guards": "npm run guard:escapes && npm run guard:test-ratio && npm run guard:concerns",
-    "quality:commit": "npm run mc:check-new-criticals -- --staged && npm run mc:audit-surface -- --staged && npm run quality:guards && lint-staged",
+    "quality:commit": "npm run mc:staged-path-guard && npm run mc:check-new-criticals -- --staged && npm run mc:audit-surface -- --staged && npm run quality:guards && lint-staged",
+    "mc:staged-path-guard": "node scripts/mission-control/mc-staged-path-guard.mjs",
     "quality:prepush": "npm run quality:check",
     "quality:check": "npm run quality:guards && npm run mc:check-new-criticals && npm run mc:audit-surface && npm run format:check && npm run lint && npm run typecheck && npm run dep:check && npm run dup:check && npm run knip && npm run test:coverage && npm run specdown && npm run build",
     "test": "vitest run",
@@ -30,6 +31,7 @@
     "mc:audit-surface": "node scripts/mission-control/mc-audit-surface.mjs",
     "mc:status": "node scripts/mission-control/mc-status.mjs",
     "mc:add-promise": "node scripts/mission-control/mc-add-promise.mjs",
+    "mc:propagate": "node scripts/mission-control/mc-propagate.mjs",
     "spec-scope": "node scripts/spec-scope/cli.mjs . --out .spec-scope-out",
     "spec-scope:parse": "node scripts/spec-scope/cli.mjs . --out .spec-scope-out --parse",
     "harness:score": "node scripts/quality/harness-score.mjs"

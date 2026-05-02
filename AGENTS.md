@@ -94,6 +94,25 @@ E(Evaluator)가 형식적으로만 분리되면 self-justifying loop를 막지 �
 - agent는 rubric을 작성·수정하지 않는다. 새 rubric이 필요하면 STOP하고 `STATUS: NEEDS_HUMAN`으로 보고한다.
 - evidence는 runtime이 만든다. agent가 evidence 파일을 작성·편집하면 production-equivalent라는 표시가 거짓말이 된다.
 - `met` verdict는 `runtime-output` 또는 `rendered-dom` evidence ref가 있을 때만 선언한다 — validator(`mc:validate-story-chain`)가 `met_missing_production_evidence`로 잡는다.
+- 로컬 강제: pre-commit이 `mc:staged-path-guard`를 돌려 staged 파일 중 `rubrics/` 변경과 `evidence/` force-add를 차단한다 — CODEOWNERS와 별개로 동작한다.
+
+### intent-absorbed subtype + Human Judgment Gate
+
+Spec Ledger frontmatter는 두 차원의 메타를 담는다.
+
+| 필드                                 | 의미                                                                                                         |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `curated: true`                      | 이 ledger는 promise/AC 단위로 evidence가 붙은 진짜 ledger다 (skeleton 아님)                                  |
+| `intentAbsorbedIntoAcceptance: true` | Intent Check를 별도 entry로 두지 않고 deterministic Acceptance Check로 흡수했다 (의도 우회 ❌, 명시 흡수 ⭕) |
+| `intentJudgmentRefs:`                | absorbed promise 각각이 `docs/intent-judgments.md`의 어느 anchor를 H decision evidence로 가리키는가          |
+
+`intentAbsorbedIntoAcceptance: true`인 spec은 validator가 다음을 강제한다:
+
+- `intentJudgmentRefs:`가 비어 있으면 `missing_intent_judgment_ref` (critical)
+- 각 ref가 가리키는 anchor가 `docs/intent-judgments.md`에 존재하지 않으면 `missing_intent_judgment_ref` (critical)
+- 흡수된 source promise가 `acceptanceChecks` 0개면 `absorbed_promise_missing_acceptance_check` (critical)
+
+이 셋은 라이트하우스 운영에서 잡힌 "absorbed-into-AC 우회로"를 처음부터 닫는 강제 장치다.
 
 ## Story Chain Authoring CLI
 
@@ -107,7 +126,16 @@ node scripts/mission-control/mc-add-promise.mjs <slug> \
   --lane product
 ```
 
-인자가 부족하면 `STATUS: NEEDS_HUMAN`으로 종료한다.
+인자가 부족하면 `STATUS: NEEDS_HUMAN`으로 종료한다. valid lane 목록은 `scripts/mission-control/lanes.json`에서 관리한다 (제품마다 자유롭게 갱신).
+
+새 promise의 Acceptance Check를 ledger와 covering spec으로 옮길 때는 `mc:propagate`를 쓴다.
+
+```bash
+npm run mc:propagate -- <promise-id>            # dry-run — 추가될 markdown row만 출력
+npm run mc:propagate -- <promise-id> --apply    # 실제 append (기존 table 헤더가 있어야 함)
+```
+
+table 헤더가 없으면 `STATUS: NEEDS_HUMAN`으로 멈춘다 — 첫 table은 사람이 만든다.
 
 ## Markdown 파싱
 

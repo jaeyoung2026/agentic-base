@@ -23,8 +23,21 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "../..");
 const PROMISES_DIR = join(REPO_ROOT, "docs/contracts/story-chain/promises");
 const TEMPLATE_PATH = join(PROMISES_DIR, "_TEMPLATE.md");
+const LANES_CONFIG = join(__dirname, "lanes.json");
 
-const VALID_LANES = new Set(["product", "agent", "execution", "admin", "other"]);
+function loadValidLanes() {
+  try {
+    const raw = JSON.parse(readFileSync(LANES_CONFIG, "utf8"));
+    if (Array.isArray(raw.valid) && raw.valid.every((entry) => typeof entry === "string")) {
+      return new Set(raw.valid);
+    }
+  } catch {
+    /* fall through */
+  }
+  return new Set(["product", "agent", "execution", "admin", "other"]);
+}
+
+const VALID_LANES = loadValidLanes();
 
 function parseArgs(argv) {
   const positional = [];
