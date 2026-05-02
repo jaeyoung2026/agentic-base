@@ -1,0 +1,23 @@
+[
+  {
+    "name": "hardcoded-radius",
+    "pattern": "rounded-\\[\\d+px\\]",
+    "glob": "*.tsx",
+    "maxAllowed": 0,
+    "excludeFiles": []
+  },
+  {
+    "name": "hardcoded-font-size",
+    "pattern": "text-\\[\\d+px\\]",
+    "glob": "*.tsx",
+    "maxAllowed": 2,
+    "excludeFiles": []
+  },
+  {
+    "name": "hardcoded-api-path",
+    "pattern": "\"/api/",
+    "glob": "*.ts,*.tsx",
+    "maxAllowed": 0,
+    "excludeFiles": ["src/app/api/"]
+  }
+]
