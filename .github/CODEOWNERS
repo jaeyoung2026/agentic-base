@@ -1,0 +1,8 @@
+# CODEOWNERS — E authority 실질 독립성 enforcement
+#
+# rubrics/ 디렉토리는 H(Human) authority 전용이다.
+# agent는 rubric을 작성·수정하지 않는다 (self-justifying loop 차단).
+# 라이트하우스 운영에서 잡힌 약점("agent가 rubric/evidence를 모두 쥐면 E는 형식적 분리")의
+# agentic-base 측 회피 장치.
+
+/docs/contracts/story-chain/rubrics/   @jaeyoung2026

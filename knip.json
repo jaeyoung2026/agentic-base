@@ -20,6 +20,11 @@
     "zustand",
     "yaml",
     "@google/generative-ai",
-    "dotenv"
+    "dotenv",
+    "unified",
+    "remark-parse",
+    "remark-frontmatter",
+    "remark-gfm",
+    "mdast-util-to-string"
   ]
 }

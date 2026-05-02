@@ -82,6 +82,37 @@ STOP 조건:
 
 guard를 추가하기 전에 abstraction 자체를 줄일 수 있는지 먼저 검토한다. 잘못된 경계를 test, lint, policy advice로 계속 둘러싸기보다, 그 잘못된 상태를 표현하기 어려운 구조로 바꾸는 편이 우선이다. guard는 abstraction reduction을 검토한 뒤의 fallback이다.
 
+## E Authority Isolation
+
+E(Evaluator)가 형식적으로만 분리되면 self-justifying loop를 막지 못한다 — agent가 rubric, evidence, judge prompt를 모두 쥐면 자기 산출물을 자기 기준으로 닫게 된다. agentic-base는 두 디렉토리로 격리한다.
+
+| 디렉토리                               | 누가 만지나             | 강제 수단                |
+| -------------------------------------- | ----------------------- | ------------------------ |
+| `docs/contracts/story-chain/rubrics/`  | H 전용                  | `.github/CODEOWNERS`     |
+| `docs/contracts/story-chain/evidence/` | production runtime 자동 | `.gitignore` + 코드 경로 |
+
+- agent는 rubric을 작성·수정하지 않는다. 새 rubric이 필요하면 STOP하고 `STATUS: NEEDS_HUMAN`으로 보고한다.
+- evidence는 runtime이 만든다. agent가 evidence 파일을 작성·편집하면 production-equivalent라는 표시가 거짓말이 된다.
+- `met` verdict는 `runtime-output` 또는 `rendered-dom` evidence ref가 있을 때만 선언한다 — validator(`mc:validate-story-chain`)가 `met_missing_production_evidence`로 잡는다.
+
+## Story Chain Authoring CLI
+
+새 promise 골격은 `mc:add-promise`로 만든다 — `_TEMPLATE.md`를 읽어 frontmatter를 채워준다. 본문(Promise/Intent Check/Acceptance Check 텍스트)은 H authority 영역이라 placeholder만 남긴다.
+
+```bash
+node scripts/mission-control/mc-add-promise.mjs <slug> \
+  --title "..." \
+  --experience experience:<slug> \
+  --moment moment:<slug> \
+  --lane product
+```
+
+인자가 부족하면 `STATUS: NEEDS_HUMAN`으로 종료한다.
+
+## Markdown 파싱
+
+`scripts/mission-control/lib/markdown-ast.mjs`가 모든 alignment 정본 markdown을 remark 기반 AST로 파싱한다. validator는 regex로 헤딩·테이블·코드 블록을 직접 매칭하지 않는다 — 라이트하우스 운영에서 잡힌 fragility(`####`, `Verdict:`, `|` 코드블록 안 매칭 등)를 처음부터 회피하는 결정이다.
+
 ## 구조
 
 ```

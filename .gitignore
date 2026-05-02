@@ -7,3 +7,8 @@ coverage/
 .spec-scope-out/
 specs/report.json
 specs/report/
+# E authority isolation: evidence는 production runtime이 자동 생성하는 산출물.
+# .gitkeep / README.md 외에는 commit하지 않는다.
+docs/contracts/story-chain/evidence/*
+!docs/contracts/story-chain/evidence/.gitkeep
+!docs/contracts/story-chain/evidence/README.md

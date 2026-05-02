@@ -4,7 +4,19 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import YAML from "yaml";
+
+import {
+  parseMarkdown,
+  getFrontmatter,
+  getSection,
+  hasSection,
+  getSubsections,
+  getTableRows,
+  getRunShellBlocks,
+  collectInlineCode,
+  getListItemTexts,
+  nodeToString,
+} from "./lib/markdown-ast.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "../..");
@@ -47,11 +59,14 @@ function readText(relPath) {
   return readFileSync(repoPath(relPath), "utf8");
 }
 
+function readAst(relPath) {
+  return parseMarkdown(readText(relPath));
+}
+
 function walkFiles(relDir, predicate) {
   const absDir = repoPath(relDir);
   const files = [];
   if (!existsSync(absDir)) return files;
-
   function walk(absPath) {
     for (const name of readdirSync(absPath)) {
       const child = join(absPath, name);
@@ -64,7 +79,6 @@ function walkFiles(relDir, predicate) {
       if (predicate(relPath)) files.push(relPath);
     }
   }
-
   walk(absDir);
   return files.sort();
 }
@@ -72,26 +86,14 @@ function walkFiles(relDir, predicate) {
 function listPromisePaths() {
   return walkFiles(PROMISES_DIR, (path) => path.endsWith(".md") && !path.endsWith("/_TEMPLATE.md"));
 }
-
 function listAspectPaths() {
   return walkFiles(ASPECTS_DIR, (path) => path.endsWith(".md") && !path.endsWith("/_TEMPLATE.md"));
 }
-
 function listSpecPaths() {
   return walkFiles(
     SPECS_DIR,
     (path) => path.endsWith(".spec.md") && !path.endsWith("/_TEMPLATE.spec.md"),
   );
-}
-
-function parseFrontmatter(markdown) {
-  const match = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
-  if (!match) return {};
-  try {
-    return YAML.parse(match[1] ?? "") ?? {};
-  } catch {
-    return {};
-  }
 }
 
 function unique(values) {
@@ -100,42 +102,6 @@ function unique(values) {
 
 function collectIds(value, pattern) {
   return unique([...String(value ?? "").matchAll(pattern)].map((match) => match[1]));
-}
-
-function extractMarkdownSection(markdown, heading) {
-  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const start = new RegExp(`^##\\s+${escaped}\\s*$`, "im").exec(markdown);
-  if (!start || start.index === undefined) return "";
-  const after = markdown.slice(start.index + start[0].length);
-  const end = /^##\s+/m.exec(after);
-  return end && end.index !== undefined ? after.slice(0, end.index) : after;
-}
-
-function parseMarkdownTable(section) {
-  const rows = section
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.startsWith("|") && !/^\|\s*-/.test(line));
-  if (rows.length === 0) return [];
-
-  const headers = rows[0]
-    .split("|")
-    .slice(1, -1)
-    .map((cell) => cell.trim().toLowerCase());
-
-  return rows.slice(1).flatMap((row) => {
-    const cells = row
-      .split("|")
-      .slice(1, -1)
-      .map((cell) => cell.trim());
-    if (cells.every((cell) => cell === "")) return [];
-
-    const record = {};
-    headers.forEach((header, index) => {
-      record[header] = cells[index] ?? "";
-    });
-    return record;
-  });
 }
 
 function cell(row, names) {
@@ -190,16 +156,21 @@ function extractAcceptanceCheckIds(value) {
 }
 
 function parsePromise(path) {
-  const markdown = readText(path);
-  const frontmatter = parseFrontmatter(markdown);
+  const ast = readAst(path);
+  const frontmatter = getFrontmatter(ast);
   const id =
     typeof frontmatter.id === "string" && frontmatter.id.trim()
       ? frontmatter.id.trim()
       : `promise:${path.replace(/^.*\/|\.md$/g, "")}`;
+
   const frontmatterChecks = Array.isArray(frontmatter.acceptanceChecks)
     ? frontmatter.acceptanceChecks.filter((entry) => typeof entry === "string")
     : [];
-  const headingChecks = collectIds(markdown, /^###\s+(acceptance-check:[a-z0-9-]+|AC\d+)\s*$/gim);
+
+  const headingChecks = ast.children
+    .filter((node) => node.type === "heading" && node.depth === 3)
+    .map((node) => nodeToString(node))
+    .flatMap((text) => collectIds(text, /\b(acceptance-check:[a-z0-9-]+|AC\d+)\b/g));
 
   return {
     id,
@@ -212,19 +183,17 @@ function parseFeatureSpecs() {
   if (!existsSync(repoPath(FEATURE_SPECS_PATH))) {
     return { ledgerRows: [], scenarioIds: new Set() };
   }
+  const ast = readAst(FEATURE_SPECS_PATH);
+  const ledgerNodes = getSection(ast, 2, "Acceptance Check Ledger");
+  const scenarioNodes = getSection(ast, 2, "Scenario Catalog");
 
-  const markdown = readText(FEATURE_SPECS_PATH);
-  const ledgerRows = parseMarkdownTable(
-    extractMarkdownSection(markdown, "Acceptance Check Ledger"),
-  ).flatMap((row) => {
+  const ledgerRows = getTableRows(ledgerNodes).flatMap((row) => {
     const promiseId = cell(row, ["promise", "story", "us"]);
     const acId = cell(row, ["acceptance check", "acceptance criterion", "ac"]);
     if (!promiseId || !acId) return [];
-
     const specCell = cell(row, ["covering spec ledger", "covering spec", "spec", "evidence"]);
     const evidenceCell = cell(row, ["evidence"]);
     const traceCell = `${specCell} ${evidenceCell}`;
-
     return {
       promiseId,
       acId,
@@ -234,7 +203,7 @@ function parseFeatureSpecs() {
   });
 
   const scenarioIds = new Set(
-    parseMarkdownTable(extractMarkdownSection(markdown, "Scenario Catalog"))
+    getTableRows(scenarioNodes)
       .flatMap((row) => extractScenarioIds(cell(row, ["scenario", "sc"])))
       .filter(Boolean),
   );
@@ -242,11 +211,11 @@ function parseFeatureSpecs() {
   return { ledgerRows, scenarioIds };
 }
 
-function parseCoverageEntries(markdown) {
-  const section = extractMarkdownSection(markdown, "Coverage By Story");
-  if (!section) return [];
+function parseCoverageEntries(ast) {
+  const sectionNodes = getSection(ast, 2, "Coverage By Story");
+  if (sectionNodes.length === 0) return [];
 
-  const tableEntries = parseMarkdownTable(section).flatMap((row) => {
+  const tableEntries = getTableRows(sectionNodes).flatMap((row) => {
     const promiseIds = extractPromiseIds(cell(row, ["promise", "story", "us"]));
     const acIds = extractAcceptanceCheckIds(
       cell(row, ["acceptance check", "acceptance criterion", "ac"]),
@@ -254,8 +223,7 @@ function parseCoverageEntries(markdown) {
     return promiseIds.flatMap((promiseId) => acIds.map((acId) => ({ promiseId, acId })));
   });
 
-  const inlineEntries = [...section.matchAll(/`([^`]+)`/g)].flatMap((match) => {
-    const value = match[1] ?? "";
+  const inlineEntries = collectInlineCode(sectionNodes).flatMap((value) => {
     const promiseIds = extractPromiseIds(value);
     const acIds = extractAcceptanceCheckIds(value);
     return promiseIds.flatMap((promiseId) => acIds.map((acId) => ({ promiseId, acId })));
@@ -267,34 +235,6 @@ function parseCoverageEntries(markdown) {
     const [promiseId, acId] = key.split("|");
     return { promiseId, acId };
   });
-}
-
-function extractRunShellBlocks(markdown) {
-  const blocks = [];
-  const lines = markdown.split(/\r?\n/);
-  let currentHeading = "run";
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const heading = lines[index]?.match(/^###\s+(.+)$/);
-    if (heading?.[1]) currentHeading = heading[1].trim();
-    if (!lines[index]?.startsWith("```run:shell")) continue;
-
-    const blockLines = [];
-    let cursor = index + 1;
-    while (cursor < lines.length && !lines[cursor]?.startsWith("```")) {
-      blockLines.push(lines[cursor] ?? "");
-      cursor += 1;
-    }
-    index = cursor;
-    const command =
-      blockLines
-        .map((line) => line.trim())
-        .find((line) => line !== "" && !line.startsWith("#"))
-        ?.replace(/^\$\s*/, "") ?? "";
-    if (command) blocks.push({ heading: currentHeading, command });
-  }
-
-  return blocks;
 }
 
 function extractExecutionTargets(command) {
@@ -329,7 +269,6 @@ function tryResolveImport(fromRelPath, specifier) {
       ? resolve(dirname(fromAbsPath), specifier)
       : null;
   if (!basePath) return null;
-
   const candidates = [
     basePath,
     `${basePath}.ts`,
@@ -355,7 +294,6 @@ function collectSrcImports(relPath) {
     /import\s+["']([^"']+)["']/g,
     /require\(\s*["']([^"']+)["']\s*\)/g,
   ];
-
   for (const pattern of patterns) {
     let match;
     while ((match = pattern.exec(source)) !== null) {
@@ -366,38 +304,32 @@ function collectSrcImports(relPath) {
   return unique(imports);
 }
 
-function parseSufficiencyEntries(markdown) {
-  const section = extractMarkdownSection(markdown, "Sufficiency Review");
-  if (!section.trim()) return [];
+function parseSufficiencyEntries(ast) {
+  const sectionNodes = getSection(ast, 2, "Sufficiency Review");
+  if (sectionNodes.length === 0) return [];
 
-  const entries = [];
-  const matches = [...section.matchAll(/^###\s+(.+)$/gm)];
-  for (let index = 0; index < matches.length; index += 1) {
-    const current = matches[index];
-    const next = matches[index + 1];
-    const start = current.index ?? 0;
-    const end = next?.index ?? section.length;
-    const block = section.slice(start, end);
-    const verdict = block.match(/^\s*-?\s*Verdict:\s*([A-Za-z-]+)\s*$/im)?.[1];
-    const evidence = block.match(/^\s*-?\s*Evidence:\s*(.+)$/im)?.[1]?.trim() ?? "";
-    entries.push({
-      heading: current[1]?.trim() ?? "",
-      block,
-      verdict: verdict?.toLowerCase() ?? null,
-      evidence,
-    });
-  }
-  return entries;
+  const subsections = getSubsections(sectionNodes, 3);
+  return subsections.map((sub) => {
+    const listTexts = getListItemTexts(sub.nodes);
+    const flat = [...listTexts, nodeToString({ type: "root", children: sub.nodes })].join("\n");
+    const verdictMatch = flat.match(/Verdict:\s*([A-Za-z-]+)/i);
+    const evidenceMatch = flat.match(/Evidence:\s*([^\n]+)/i);
+    return {
+      heading: sub.heading,
+      block: flat,
+      verdict: verdictMatch?.[1]?.toLowerCase() ?? null,
+      evidence: evidenceMatch?.[1]?.trim() ?? "",
+    };
+  });
 }
 
 function parseSpec(path) {
-  const markdown = readText(path);
-  const runBlocks = extractRunShellBlocks(markdown);
+  const ast = readAst(path);
+  const runBlocks = getRunShellBlocks(ast.children);
   const runChecks = runBlocks.map((block) => {
     const executionTargets = extractExecutionTargets(block.command).map(resolveTarget);
     const missingTargets = executionTargets.filter((target) => !existsSync(repoPath(target)));
     const codeTargets = new Set();
-
     for (const target of executionTargets) {
       if (!existsSync(repoPath(target))) continue;
       if (target.startsWith("src/") && !/\.test\./.test(target)) {
@@ -405,7 +337,6 @@ function parseSpec(path) {
       }
       for (const srcImport of collectSrcImports(target)) codeTargets.add(srcImport);
     }
-
     return {
       command: block.command,
       executionTargets,
@@ -416,17 +347,16 @@ function parseSpec(path) {
 
   return {
     path,
-    markdown,
-    hasCoverageByStory: /^##\s+Coverage By Story\s*$/im.test(markdown),
-    coverageEntries: parseCoverageEntries(markdown),
+    hasCoverageByStory: hasSection(ast, 2, "Coverage By Story"),
+    coverageEntries: parseCoverageEntries(ast),
     runChecks,
-    sufficiencyEntries: parseSufficiencyEntries(markdown),
+    sufficiencyEntries: parseSufficiencyEntries(ast),
   };
 }
 
 function parseAspect(path) {
-  const markdown = readText(path);
-  const frontmatter = parseFrontmatter(markdown);
+  const ast = readAst(path);
+  const frontmatter = getFrontmatter(ast);
   const id =
     typeof frontmatter.id === "string" && frontmatter.id.trim()
       ? frontmatter.id.trim()
@@ -438,15 +368,13 @@ function parseAspect(path) {
   const legacyIds = Array.isArray(frontmatter.legacyIds)
     ? frontmatter.legacyIds.filter((entry) => typeof entry === "string")
     : [];
-  const title = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? id;
+  const titleNode = ast.children.find((child) => child.type === "heading" && child.depth === 1);
+  const title = titleNode ? nodeToString(titleNode) : id;
   return { id, path, coveringSpec, title, legacyIds };
 }
 
 function createFinding(input, findings) {
-  return {
-    id: `finding-${findings.length + 1}`,
-    ...input,
-  };
+  return { id: `finding-${findings.length + 1}`, ...input };
 }
 
 function addFinding(findings, input) {
@@ -535,7 +463,6 @@ function buildSnapshot() {
         });
         continue;
       }
-
       const covered = spec.coverageEntries.some(
         (entry) => entry.promiseId === row.promiseId && entry.acId === row.acId,
       );
@@ -643,7 +570,6 @@ function buildSnapshot() {
       aspectRows.push({ ...aspect, status: "unverified" });
       continue;
     }
-
     if (latestEntry.verdict === "not-met") {
       addFinding(findings, {
         severity: "critical",
@@ -656,7 +582,6 @@ function buildSnapshot() {
       aspectRows.push({ ...aspect, status: "not-met" });
       continue;
     }
-
     if (latestEntry.verdict !== "met") {
       addFinding(findings, {
         severity: "critical",
@@ -669,7 +594,6 @@ function buildSnapshot() {
       aspectRows.push({ ...aspect, status: "unknown" });
       continue;
     }
-
     aspectRows.push({ ...aspect, status: "met" });
   }
 

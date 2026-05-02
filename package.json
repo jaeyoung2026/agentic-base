@@ -29,6 +29,7 @@
     "mc:check-new-criticals": "node scripts/mission-control/mc-check-new-criticals.mjs",
     "mc:audit-surface": "node scripts/mission-control/mc-audit-surface.mjs",
     "mc:status": "node scripts/mission-control/mc-status.mjs",
+    "mc:add-promise": "node scripts/mission-control/mc-add-promise.mjs",
     "spec-scope": "node scripts/spec-scope/cli.mjs . --out .spec-scope-out",
     "spec-scope:parse": "node scripts/spec-scope/cli.mjs . --out .spec-scope-out --parse",
     "harness:score": "node scripts/quality/harness-score.mjs"
@@ -40,9 +41,14 @@
     "@supabase/supabase-js": "^2.48.0",
     "ai": "^6.0.0",
     "dotenv": "^17.4.1",
+    "mdast-util-to-string": "^4.0.0",
     "next": "^16.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
     "yaml": "^2.8.3",
     "zod": "^3.24.0",
     "zustand": "^5.0.0"
