@@ -303,7 +303,7 @@ function collectSrcImports(relPath) {
     let match;
     while ((match = pattern.exec(source)) !== null) {
       const resolved = tryResolveImport(relPath, match[1] ?? "");
-      if (resolved?.startsWith("src/")) imports.push(resolved);
+      if (resolved?.startsWith("src/") || resolved?.startsWith("scripts/")) imports.push(resolved);
     }
   }
   return unique(imports);
@@ -378,7 +378,10 @@ function parseSpec(path) {
     const codeTargets = new Set();
     for (const target of executionTargets) {
       if (!existsSync(repoPath(target))) continue;
-      if (target.startsWith("src/") && !/\.test\./.test(target)) {
+      if (
+        (target.startsWith("src/") || target.startsWith("scripts/")) &&
+        !/\.test\./.test(target)
+      ) {
         codeTargets.add(target);
       }
       for (const srcImport of collectSrcImports(target)) codeTargets.add(srcImport);

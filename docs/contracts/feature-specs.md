@@ -4,8 +4,11 @@
 
 ## Acceptance Check Ledger
 
-| Promise | Acceptance Check | Covering Spec Ledger | Evidence |
-| ------- | ---------------- | -------------------- | -------- |
+| Promise                     | Acceptance Check                         | Covering Spec Ledger                                         | Evidence  |
+| --------------------------- | ---------------------------------------- | ------------------------------------------------------------ | --------- |
+| promise:mission-control-cli | acceptance-check:mission-control-cli-ac1 | docs/contracts/story-chain/specs/mission-control-cli.spec.md | (pending) |
+| promise:mission-control-cli | acceptance-check:mission-control-cli-ac2 | docs/contracts/story-chain/specs/mission-control-cli.spec.md | (pending) |
+| promise:mission-control-cli | acceptance-check:mission-control-cli-ac3 | docs/contracts/story-chain/specs/mission-control-cli.spec.md | (pending) |
 
 ## Scenario Catalog
 
