@@ -18,6 +18,8 @@
     "tailwindcss",
     "typescript-eslint",
     "zustand",
-    "yaml"
+    "yaml",
+    "@google/generative-ai",
+    "dotenv"
   ]
 }
