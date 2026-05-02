@@ -260,6 +260,8 @@ Mission Control 검증은 세 층으로 강제한다.
 
 Stable signature 형식은 `{category}|story={US-ID}|ac={ACN}|spec={path}|cmd={cmd}`다. baseline 갱신은 `npm run mc:check-new-criticals -- --update-baseline`로 명시 실행할 때만 허용한다. silent prune은 금지한다. 부채를 갚아 finding이 사라져도 check 모드는 baseline을 자동으로 줄이지 않고, 운영자가 명시적으로 갱신해 lock-in한다.
 
+`unknown` Sufficiency Review verdict와 `not-met` verdict도 `unknown_intent_verdict` / `not_met_intent_verdict` finding으로 발사된다 — verdict trichotomy의 unknown=blocking 원칙이 validator에서 실제로 강제된다는 뜻이다. live judge 미구축이거나 사람 review 미실행으로 unknown이 남으면 `--update-baseline`으로 frozen debt에 등록하고, judge/review가 verdict를 `met`으로 flip할 때 baseline을 다시 갱신해 burndown한다. `mc:validate-story-chain` 출력의 `Release: blocked`와 `mc:check-new-criticals`의 `No new criticals`가 동시에 나오면 carry-over only 상태 — release gate는 통과하지만 부채가 남아 있다는 뜻이다.
+
 ### Surface Audit
 
 `mc:audit-surface`는 `src/features/`, `src/app/(workspace)/`, `src/app/api/` route handler, `src/app/page.tsx`, `src/app/layout.tsx` 중 상단에 `// @promise`, `// @aspect`, `// @check` 태그가 없는 user-facing 파일을 orphan으로 본다.

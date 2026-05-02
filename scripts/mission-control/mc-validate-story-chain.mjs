@@ -48,6 +48,8 @@ const INTENT_CATEGORIES = new Set([
   "missing_intent_judgment_ref",
   "absorbed_promise_missing_acceptance_check",
   "invalid_intent_judgment_ref",
+  "unknown_intent_verdict",
+  "not_met_intent_verdict",
 ]);
 
 const INTENT_JUDGMENTS_PATH = "docs/intent-judgments.md";
@@ -589,12 +591,31 @@ function buildSnapshot() {
           specPath: spec.path,
           evidence: [spec.path],
         });
+        continue;
       }
       if (entry.verdict === "met" && !/(runtime-output|rendered-dom)/i.test(entry.evidence)) {
         addFinding(findings, {
           severity: "critical",
           category: "met_missing_production_evidence",
           title: `${spec.path} declares met without production-equivalent Evidence`,
+          specPath: spec.path,
+          evidence: [spec.path],
+        });
+      }
+      if (entry.verdict === "unknown") {
+        addFinding(findings, {
+          severity: "critical",
+          category: "unknown_intent_verdict",
+          title: `${spec.path} Sufficiency Review "${entry.heading}" verdict is unknown — judgment debt`,
+          specPath: spec.path,
+          evidence: [spec.path],
+        });
+      }
+      if (entry.verdict === "not-met") {
+        addFinding(findings, {
+          severity: "critical",
+          category: "not_met_intent_verdict",
+          title: `${spec.path} Sufficiency Review "${entry.heading}" verdict is not-met`,
           specPath: spec.path,
           evidence: [spec.path],
         });

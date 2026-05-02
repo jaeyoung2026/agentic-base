@@ -1,5 +1,12 @@
 {
   "version": 1,
-  "entries": [],
-  "totalCount": 0
+  "entries": [
+    {
+      "signature": "unknown_intent_verdict|spec=docs/contracts/story-chain/specs/mission-control-cli.spec.md",
+      "severity": "critical",
+      "category": "unknown_intent_verdict",
+      "title": "docs/contracts/story-chain/specs/mission-control-cli.spec.md Sufficiency Review \"2026-05-02 - intent-check:mission-control-cli\" verdict is unknown — judgment debt"
+    }
+  ],
+  "totalCount": 1
 }
